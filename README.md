@@ -226,9 +226,64 @@ Các trọng số là dữ liệu giả định và có thể được
 Việc sử dụng đồ thị vô hướng có trọng số
 cần được xác nhận trước khi triển khai QUBO.
 
-## 🧮 Dijkstra Baseline
 
-*Nội dung sẽ được bổ sung trong Tuần 1.*
+## 🧮 Thuật toán Dijkstra (Classical Baseline)
+
+### 1. Giới thiệu
+
+**Dijkstra** là thuật toán tìm đường đi ngắn nhất từ
+một node nguồn đến các node khác trong đồ thị có
+trọng số không âm.
+
+Trong đồ án, thuật toán Dijkstra được sử dụng làm
+**phương pháp đối chứng cổ điển (Classical Baseline)**
+để đánh giá kết quả tìm đường bằng QAOA.
+
+### 2. Nguyên lý hoạt động
+
+Thuật toán Dijkstra thực hiện các bước:
+
+1. **Khởi tạo:** Gán khoảng cách từ node nguồn đến
+   chính nó bằng 0 và đến các node khác bằng vô cực.
+
+2. **Lựa chọn node:** Chọn node chưa được xử lý
+   có khoảng cách tạm thời nhỏ nhất.
+
+3. **Cập nhật khoảng cách:** Kiểm tra các node kề
+   và cập nhật nếu tìm được đường đi có chi phí thấp hơn.
+
+4. **Đánh dấu:** Đánh dấu node vừa chọn là đã xử lý.
+
+5. **Lặp lại:** Tiếp tục cho đến khi node đích
+   được xử lý hoặc không còn node có thể đến được.
+
+Thao tác cập nhật khoảng cách được gọi là
+**Relaxation**, có công thức:
+
+$$
+d(v) = \min(d(v), d(u) + w(u,v))
+$$
+
+Trong đó:
+
+- **d(u):** Khoảng cách ngắn nhất hiện biết đến node u.
+- **d(v):** Khoảng cách ngắn nhất hiện biết đến node v.
+- **w(u,v):** Trọng số của liên kết giữa u và v.
+### 3. Vai trò của Dijkstra trong đồ án
+
+Dijkstra được sử dụng để:
+
+- Xác định đường đi ngắn nhất với chi phí tối ưu.
+- Làm cơ sở kiểm chứng các nghiệm tìm được bằng QAOA.
+- So sánh tổng chi phí giữa phương pháp cổ điển
+  và phương pháp lượng tử.
+- Đánh giá chất lượng nghiệm và tỷ lệ tìm được
+  đường đi tối ưu của QAOA.
+
+Dijkstra đảm bảo tìm được đường đi ngắn nhất
+trong đồ thị có trọng số không âm, trong khi
+QAOA không đảm bảo luôn thu được nghiệm tối ưu.
+
 
 ## 🌐 Week 1 Test Topology
 

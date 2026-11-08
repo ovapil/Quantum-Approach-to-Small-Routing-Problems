@@ -4,11 +4,14 @@
   "bit_order": ["A->B", "A->C", "B->D", "C->D"],
   "source": "A",
   "destination": "D",
+  "penalty_A": 10,
   "test_cases": [
     {
       "id": "TC01",
       "bitstring": "1010",
       "expected_cost": 5,
+      "expected_penalty": 0,
+      "expected_energy": 5,
       "expected_valid": true,
       "reason": "Duong di A-B-D hop le va toi uu"
     },
@@ -16,6 +19,8 @@
       "id": "TC02",
       "bitstring": "0101",
       "expected_cost": 9,
+      "expected_penalty": 0,
+      "expected_energy": 9,
       "expected_valid": true,
       "reason": "Duong di A-C-D hop le"
     },
@@ -23,6 +28,8 @@
       "id": "TC03",
       "bitstring": "0000",
       "expected_cost": 0,
+      "expected_penalty": 20,
+      "expected_energy": 20,
       "expected_valid": false,
       "reason": "Khong co canh nao duoc chon"
     },
@@ -30,6 +37,8 @@
       "id": "TC04",
       "bitstring": "1111",
       "expected_cost": 14,
+      "expected_penalty": 20,
+      "expected_energy": 34,
       "expected_valid": false,
       "reason": "Hai nhanh song song tu A den D"
     },
@@ -37,6 +46,8 @@
       "id": "TC05",
       "bitstring": "1100",
       "expected_cost": 7,
+      "expected_penalty": 40,
+      "expected_energy": 47,
       "expected_valid": false,
       "reason": "Hai canh di ra tu A nhung khong den D"
     },
@@ -44,6 +55,8 @@
       "id": "TC06",
       "bitstring": "1000",
       "expected_cost": 2,
+      "expected_penalty": 20,
+      "expected_energy": 22,
       "expected_valid": false,
       "reason": "Luong bi ngat tai B"
     },
@@ -51,6 +64,8 @@
       "id": "TC07",
       "bitstring": "0010",
       "expected_cost": 3,
+      "expected_penalty": 20,
+      "expected_energy": 23,
       "expected_valid": false,
       "reason": "Canh B-D duoc chon nhung thieu luong vao B"
     },
@@ -58,6 +73,8 @@
       "id": "TC08",
       "bitstring": "1001",
       "expected_cost": 6,
+      "expected_penalty": 20,
+      "expected_energy": 26,
       "expected_valid": false,
       "reason": "Hai canh khong tao thanh duong di A-D"
     }

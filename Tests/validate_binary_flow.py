@@ -4,20 +4,10 @@ from pathlib import Path
 
 import networkx as nx
 
-
-# ============================================================
-# Setup project paths
-# ============================================================
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = PROJECT_ROOT / "src"
 
 sys.path.insert(0, str(SRC_DIR))
-
-
-# ============================================================
-# Import project modules
-# ============================================================
 
 from topology import create_test_topology
 
@@ -28,11 +18,6 @@ from binary_encoding import (
 )
 
 from flow_constraints import check_feasibility
-
-
-# ============================================================
-# Load test cases
-# ============================================================
 
 def load_test_cases():
     test_file = (
@@ -47,23 +32,7 @@ def load_test_cases():
     ) as file:
         return json.load(file)
 
-
-# ============================================================
-# Get mapping bit order
-# ============================================================
-
 def get_mapping_bit_order(mapping):
-    """
-    Convert edge mapping thành danh sách:
-
-    [
-        "A->B",
-        "A->C",
-        ...
-    ]
-
-    để đối chiếu với bit_order trong JSON test cases.
-    """
 
     bit_order = []
 
@@ -76,32 +45,7 @@ def get_mapping_bit_order(mapping):
 
     return bit_order
 
-
-# ============================================================
-# Extra cycle stress test
-# ============================================================
-
 def test_extra_cycle_detection():
-    """
-    Stress test để kiểm tra trường hợp:
-
-        A -> B -> D
-
-    là route chính hợp lệ,
-
-    nhưng đồng thời có thêm cycle:
-
-        E -> F -> E
-
-    Flow conservation vẫn có thể thỏa tại E và F:
-
-        out - in = 0
-
-    Tuy nhiên nghiệm này KHÔNG phải một simple
-    source-to-destination path.
-
-    check_path_structure() phải loại nghiệm này.
-    """
 
     graph = nx.DiGraph()
 
@@ -147,24 +91,6 @@ def test_extra_cycle_detection():
             f"{source}->{destination}"
         )
 
-    # create_edge_mapping() đang sort edge.
-    #
-    # Expected order:
-    #
-    # bit 0 -> A->B
-    # bit 1 -> B->D
-    # bit 2 -> E->F
-    # bit 3 -> F->E
-    #
-    # 1111:
-    #
-    # A -> B -> D
-    #
-    # +
-    #
-    # E -> F -> E
-    #
-    # Route chính hợp lệ nhưng có cycle thừa.
     bitstring = "1111"
 
     selected_edges = bitstring_to_selected_edges(
@@ -198,11 +124,6 @@ def test_extra_cycle_detection():
 
     return False
 
-
-# ============================================================
-# Main validation
-# ============================================================
-
 def run_validation():
     test_data = load_test_cases()
 
@@ -224,10 +145,6 @@ def run_validation():
     )
     print("=" * 60)
 
-    # --------------------------------------------------------
-    # Validate bit order
-    # --------------------------------------------------------
-
     print("\nChecking bit order...")
 
     if actual_bit_order != expected_bit_order:
@@ -245,10 +162,6 @@ def run_validation():
 
     print("[PASS] Bit order matches")
     print(actual_bit_order)
-
-    # --------------------------------------------------------
-    # Run JSON test cases
-    # --------------------------------------------------------
 
     test_cases = test_data["test_cases"]
 
@@ -355,10 +268,6 @@ def run_validation():
                     "  -> Feasibility mismatch"
                 )
 
-    # --------------------------------------------------------
-    # Normal test summary
-    # --------------------------------------------------------
-
     print("\n" + "=" * 60)
     print("SUMMARY")
     print("=" * 60)
@@ -380,20 +289,12 @@ def run_validation():
         "flow-conservation tests passed!"
     )
 
-    # --------------------------------------------------------
-    # Extra path-structure stress test
-    # --------------------------------------------------------
-
     cycle_test_passed = (
         test_extra_cycle_detection()
     )
 
     if not cycle_test_passed:
         return False
-
-    # --------------------------------------------------------
-    # Final summary
-    # --------------------------------------------------------
 
     print("\n" + "=" * 60)
     print("FINAL VALIDATION RESULT")
@@ -424,11 +325,6 @@ def run_validation():
     )
 
     return True
-
-
-# ============================================================
-# Entry point
-# ============================================================
 
 if __name__ == "__main__":
     success = run_validation()

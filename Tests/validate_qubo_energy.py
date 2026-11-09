@@ -2,18 +2,8 @@ import json
 from pathlib import Path
 from itertools import product
 
-# ==================================================
-# TOPOLOGY 4 NODES - QUBO VALIDATION
-# Bit order: [A->B, A->C, B->D, C->D]
-# ==================================================
-
 WEIGHTS = [2, 5, 3, 4]
 PENALTY_A = 10  # Gia tri penalty thu nghiem
-
-
-# ==================================================
-# 1. CALCULATE QUBO ENERGY
-# ==================================================
 
 def evaluate(bits):
     x0, x1, x2, x3 = bits
@@ -48,11 +38,6 @@ def evaluate(bits):
     )
 
     return cost, penalty, energy, valid
-
-
-# ==================================================
-# 2. VALIDATE ALL 16 BITSTRINGS
-# ==================================================
 
 def validate_all_bitstrings():
     results = []
@@ -109,11 +94,6 @@ def validate_all_bitstrings():
     print("[PASS] Optimal QUBO solution verified!")
     print("[PASS] Valid bitstrings verified!")
 
-
-# ==================================================
-# 3. EXPECTED QUBO COEFFICIENTS
-# ==================================================
-
 def get_expected_coefficients():
     a = PENALTY_A
 
@@ -155,11 +135,6 @@ def print_expected_coefficients():
     print("\nQuadratic coefficients:")
     for name, value in quadratic.items():
         print(f"  {name}: {value}")
-
-
-# ==================================================
-# 4. EXPECTED SYMMETRIC QUBO MATRIX
-# ==================================================
 
 def get_expected_qubo_matrix():
     a = PENALTY_A
@@ -234,15 +209,6 @@ def validate_qubo_matrix():
         "all 16 original energies!"
     )
 
-
-# ==================================================
-# 5. MAIN
-# ==================================================
-
-# ==================================================
-# 5. VALIDATE PENALTY A
-# ==================================================
-
 def validate_penalty_values():
     candidates = [1, 2, 2.5, 3, 5, 10]
 
@@ -303,10 +269,6 @@ def validate_penalty_values():
         "[PASS] All tested A > 2.5 "
         "produce the expected unique optimum!"
     )
-
-# ==================================================
-# 6. VALIDATE EXPECTED TEST CASES FROM JSON
-# ==================================================
 
 def validate_expected_test_cases():
     test_file = (
@@ -369,10 +331,6 @@ def validate_expected_test_cases():
         f"[PASS] All {len(test_cases)} "
         "expected test cases verified!"
     )
-
-# ==================================================
-# 7. QUBO TO ISING VALIDATION
-# ==================================================
 
 def get_expected_ising_coefficients():
     q, qubo_constant = get_expected_qubo_matrix()
@@ -496,10 +454,6 @@ def validate_qubo_to_ising():
         f"[PASS] QUBO and Ising energies "
         f"match for all {count} bitstrings!"
     )
-
-# ==================================================
-# 8. MAIN
-# ==================================================
 
 def main():
     validate_all_bitstrings()

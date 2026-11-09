@@ -7,10 +7,6 @@ from binary_encoding import (
 
 
 def calculate_node_flows(graph, selected_edges):
-    """
-    Tính inflow và outflow của từng node
-    dựa trên các edge được chọn.
-    """
 
     flows = {}
 
@@ -33,17 +29,6 @@ def check_flow_conservation(
     source,
     destination
 ):
-    """
-    Kiểm tra điều kiện:
-
-        out(v) - in(v) = b_v
-
-    với:
-        source      -> b_v = +1
-        destination -> b_v = -1
-        node khác   -> b_v = 0
-    """
-
     flows = calculate_node_flows(
         graph,
         selected_edges
@@ -83,16 +68,6 @@ def check_path_structure(
     source,
     destination
 ):
-    """
-    Kiểm tra các edge được chọn có tạo thành
-    đúng một simple path từ source tới destination hay không.
-
-    Phần này giúp loại:
-    - branch thừa
-    - edge rời rạc
-    - cycle
-    - edge không thuộc route chính
-    """
 
     if not selected_edges:
         return False, "No edges selected"
@@ -197,9 +172,6 @@ def check_feasibility(
     source,
     destination
 ):
-    """
-    Kiểm tra toàn bộ feasibility của một bitstring.
-    """
 
     selected_edges = bitstring_to_selected_edges(
         bitstring,

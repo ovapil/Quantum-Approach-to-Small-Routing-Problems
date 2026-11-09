@@ -2,13 +2,6 @@ from topology import create_test_topology
 
 
 def create_edge_mapping(graph):
-    """
-    Tạo mapping cố định:
-    bit index -> variable -> edge -> weight
-
-    Edge được sort để mapping luôn deterministic.
-    """
-
     edges = sorted(
         graph.edges(data=True),
         key=lambda edge: (edge[0], edge[1])
@@ -27,10 +20,6 @@ def create_edge_mapping(graph):
 
 
 def validate_bitstring(bitstring, mapping):
-    """
-    Kiểm tra bitstring có hợp lệ với số binary variables hay không.
-    """
-
     if len(bitstring) != len(mapping):
         raise ValueError(
             f"Bitstring length must be {len(mapping)}, "
@@ -44,10 +33,6 @@ def validate_bitstring(bitstring, mapping):
 
 
 def bitstring_to_selected_edges(bitstring, mapping):
-    """
-    Decode bitstring thành các edge được chọn.
-    """
-
     validate_bitstring(bitstring, mapping)
 
     selected_edges = []
@@ -62,12 +47,6 @@ def bitstring_to_selected_edges(bitstring, mapping):
 
 
 def calculate_objective_cost(bitstring, mapping):
-    """
-    Tính objective:
-
-        C(x) = Σ w_ij * x_ij
-    """
-
     validate_bitstring(bitstring, mapping)
 
     total_cost = 0
@@ -80,10 +59,6 @@ def calculate_objective_cost(bitstring, mapping):
 
 
 def print_edge_mapping(mapping):
-    """
-    Hiển thị mapping để dễ kiểm tra.
-    """
-
     print("Edge mapping:")
 
     for index, info in mapping.items():

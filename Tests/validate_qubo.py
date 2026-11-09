@@ -1,20 +1,11 @@
 import sys
 from pathlib import Path
 
-
-# ============================================================
-# Setup project path
-# ============================================================
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = PROJECT_ROOT / "src"
 
 sys.path.insert(0, str(SRC_DIR))
 
-
-# ============================================================
-# Imports
-# ============================================================
 
 from topology import create_test_topology
 
@@ -39,11 +30,6 @@ from exact_solver import (
     solve_qubo_exact,
 )
 
-
-# ============================================================
-# Direct penalty calculation
-# ============================================================
-
 def calculate_direct_flow_penalty(
     graph,
     bitstring,
@@ -51,14 +37,6 @@ def calculate_direct_flow_penalty(
     source,
     destination
 ):
-    """
-    Tính penalty trực tiếp từ:
-
-        sum_v (out(v) - in(v) - b_v)^2
-
-    Hàm này độc lập với QUBO expansion,
-    dùng để kiểm tra qubo_builder.py.
-    """
 
     selected_edges = []
 
@@ -101,11 +79,6 @@ def calculate_direct_flow_penalty(
         )
 
     return penalty_value
-
-
-# ============================================================
-# Test 1 - Coefficients
-# ============================================================
 
 def test_qubo_coefficients(
     graph,
@@ -187,11 +160,6 @@ def test_qubo_coefficients(
 
     return passed
 
-
-# ============================================================
-# Test 2 - QUBO energy vs direct formulation
-# ============================================================
-
 def test_energy_equivalence(
     graph,
     mapping,
@@ -269,11 +237,6 @@ def test_energy_equivalence(
 
     return all_passed
 
-
-# ============================================================
-# Test 3 - Known energy values
-# ============================================================
-
 def test_known_energies(
     graph,
     mapping,
@@ -336,11 +299,6 @@ def test_known_energies(
 
     return all_passed
 
-
-# ============================================================
-# Test 4 - Exact QUBO optimum
-# ============================================================
-
 def test_exact_optimum(
     graph,
     mapping,
@@ -393,11 +351,6 @@ def test_exact_optimum(
         print(best)
 
     return passed
-
-
-# ============================================================
-# Test 5 - QUBO vs Dijkstra
-# ============================================================
 
 def test_qubo_vs_dijkstra(
     graph,
@@ -466,11 +419,6 @@ def test_qubo_vs_dijkstra(
 
     return passed
 
-
-# ============================================================
-# Test 6 - Penalty threshold
-# ============================================================
-
 def test_penalty_threshold(
     graph,
     mapping,
@@ -480,11 +428,6 @@ def test_penalty_threshold(
     print(
         "\nTEST 6 - PENALTY THRESHOLD"
     )
-
-    # --------------------------------------------------------
-    # A = 2.0
-    # Invalid 0000 should win
-    # --------------------------------------------------------
 
     results_low = solve_qubo_exact(
         graph,
@@ -500,12 +443,6 @@ def test_penalty_threshold(
         best_low["bitstring"] == "0000"
         and best_low["feasible"] is False
     )
-
-    # --------------------------------------------------------
-    # A = 2.5
-    # Boundary:
-    # 0000 and 1010 both energy = 5
-    # --------------------------------------------------------
 
     results_boundary = solve_qubo_exact(
         graph,
@@ -532,11 +469,6 @@ def test_penalty_threshold(
             - 5.0
         ) <= 1e-9
     )
-
-    # --------------------------------------------------------
-    # A = 3.0
-    # Valid 1010 should win
-    # --------------------------------------------------------
 
     results_safe = solve_qubo_exact(
         graph,
@@ -589,11 +521,6 @@ def test_penalty_threshold(
         and boundary_pass
         and safe_pass
     )
-
-
-# ============================================================
-# Main
-# ============================================================
 
 def run_validation():
 
@@ -715,11 +642,6 @@ def run_validation():
     )
 
     return False
-
-
-# ============================================================
-# Entry point
-# ============================================================
 
 if __name__ == "__main__":
 

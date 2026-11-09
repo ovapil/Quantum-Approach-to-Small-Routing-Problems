@@ -1,31 +1,16 @@
 import sys
 from pathlib import Path
 
-
-# ============================================================
-# Setup project path
-# ============================================================
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = PROJECT_ROOT / "src"
 
 sys.path.insert(0, str(SRC_DIR))
-
-
-# ============================================================
-# Imports
-# ============================================================
 
 from topology import create_test_topology
 
 from binary_encoding import create_edge_mapping
 
 from exact_solver import solve_qubo_exact
-
-
-# ============================================================
-# Penalty experiment
-# ============================================================
 
 def run_penalty_experiment():
     graph = create_test_topology()

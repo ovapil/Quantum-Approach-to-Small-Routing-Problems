@@ -12,20 +12,6 @@ def build_flow_expression(
     source,
     destination
 ):
-    """
-    Xây flow expression:
-
-        out(v) - in(v) - b_v = 0
-
-    dưới dạng:
-
-        constant + sum(coeff_i * x_i)
-
-    với:
-        b_source = +1
-        b_destination = -1
-        node khác = 0
-    """
 
     if node == source:
         b_v = 1
@@ -62,27 +48,8 @@ def build_qubo(
     destination,
     penalty
 ):
-    """
-    Xây QUBO dưới dạng:
-
-        constant
-        + sum(linear_i * x_i)
-        + sum(quadratic_ij * x_i*x_j)
-
-    từ:
-
-        shortest-path objective
-        +
-        penalty * flow constraints^2
-    """
 
     number_of_variables = len(mapping)
-
-    # --------------------------------------------------------
-    # Objective:
-    #
-    # C(x) = sum(w_i * x_i)
-    # --------------------------------------------------------
 
     constant = 0.0
 
@@ -92,10 +59,6 @@ def build_qubo(
     }
 
     quadratic = {}
-
-    # --------------------------------------------------------
-    # Flow penalties
-    # --------------------------------------------------------
 
     for node in graph.nodes:
         flow_constant, flow_coefficients = (
@@ -108,11 +71,6 @@ def build_qubo(
             )
         )
 
-        # (c + Σ a_i*x_i)^2
-        #
-        # constant:
-        # c^2
-
         constant += (
             penalty
             * (flow_constant ** 2)
@@ -122,14 +80,6 @@ def build_qubo(
             flow_coefficients.items()
         )
 
-        # Linear terms:
-        #
-        # a_i^2*x_i^2 + 2*c*a_i*x_i
-        #
-        # Binary property:
-        #
-        # x_i^2 = x_i
-
         for index, a_i in coefficient_items:
             linear[index] += (
                 penalty
@@ -138,10 +88,6 @@ def build_qubo(
                     + 2 * flow_constant * a_i
                 )
             )
-
-        # Quadratic terms:
-        #
-        # 2*a_i*a_j*x_i*x_j
 
         for i in range(len(coefficient_items)):
             index_i, a_i = coefficient_items[i]
@@ -193,15 +139,6 @@ def calculate_qubo_energy(
     mapping,
     qubo
 ):
-    """
-    Tính:
-
-        E(x)
-        =
-        constant
-        + Σ linear_i*x_i
-        + Σ quadratic_ij*x_i*x_j
-    """
 
     validate_bitstring(
         bitstring,
@@ -239,14 +176,6 @@ def build_symmetric_qubo_matrix(
     mapping,
     qubo
 ):
-    """
-    Tạo symmetric Q matrix sao cho:
-
-        E(x) = constant + x^T Q x
-
-    Với off-diagonal terms, coefficient được chia 2
-    vì x^T Q x đếm Q_ij và Q_ji.
-    """
 
     n = len(mapping)
 

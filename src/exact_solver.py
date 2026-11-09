@@ -158,10 +158,6 @@ if __name__ == "__main__":
         f"{best['feasible']}"
     )
 
-    # --------------------------------------------------------
-    # Dijkstra ground truth
-    # --------------------------------------------------------
-
     dijkstra_path, dijkstra_cost = (
         solve_dijkstra(
             graph,

@@ -1,0 +1,85 @@
+
+{
+  "topology": "topology_4",
+  "source": "A",
+  "destination": "D",
+  "project_bit_order": [
+    "A->B",
+    "A->C",
+    "B->D",
+    "C->D"
+  ],
+  "qiskit_bit_order": "q3q2q1q0",
+  "qubit_mapping": {
+    "q0": "A->B",
+    "q1": "A->C",
+    "q2": "B->D",
+    "q3": "C->D"
+  },
+  "test_cases": [
+    {
+      "id": "DEC01",
+      "qiskit_bitstring": "0101",
+      "expected_project_bitstring": "1010",
+      "expected_valid": true,
+      "expected_path": ["A", "B", "D"],
+      "expected_cost": 5
+    },
+    {
+      "id": "DEC02",
+      "qiskit_bitstring": "1010",
+      "expected_project_bitstring": "0101",
+      "expected_valid": true,
+      "expected_path": ["A", "C", "D"],
+      "expected_cost": 9
+    },
+    {
+      "id": "DEC03",
+      "qiskit_bitstring": "0000",
+      "expected_project_bitstring": "0000",
+      "expected_valid": false,
+      "expected_path": null,
+      "expected_cost": 0
+    },
+    {
+      "id": "DEC04",
+      "qiskit_bitstring": "1111",
+      "expected_project_bitstring": "1111",
+      "expected_valid": false,
+      "expected_path": null,
+      "expected_cost": 14
+    },
+    {
+      "id": "DEC05",
+      "qiskit_bitstring": "0001",
+      "expected_project_bitstring": "1000",
+      "expected_valid": false,
+      "expected_path": null,
+      "expected_cost": 2
+    },
+    {
+      "id": "DEC06",
+      "qiskit_bitstring": "0100",
+      "expected_project_bitstring": "0010",
+      "expected_valid": false,
+      "expected_path": null,
+      "expected_cost": 3
+    },
+    {
+      "id": "DEC07",
+      "qiskit_bitstring": "0011",
+      "expected_project_bitstring": "1100",
+      "expected_valid": false,
+      "expected_path": null,
+      "expected_cost": 7
+    },
+    {
+      "id": "DEC08",
+      "qiskit_bitstring": "1001",
+      "expected_project_bitstring": "1001",
+      "expected_valid": false,
+      "expected_path": null,
+      "expected_cost": 6
+    }
+  ]
+}

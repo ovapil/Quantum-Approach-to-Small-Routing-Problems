@@ -1,0 +1,5 @@
+experiment,topology,method,seed,nodes,edges,density,variables,qubits,state_space_size,total_shots,feasible_shots,optimal_shots,feasibility_rate,optimal_solution_probability,best_feasible_cost,mean_feasible_cost,optimal_cost,optimality_gap,runtime_seconds,runtime_repeats
+E_graph_density,density_level_1,dijkstra_reference,42,6,7,0.4666666666666667,7,7,128,,,,,,7,,7,0.0,9.51790000544861e-06,1000
+E_graph_density,density_level_2,dijkstra_reference,42,6,10,0.6666666666666666,10,10,1024,,,,,,4,,4,0.0,1.0367800001404248e-05,1000
+E_graph_density,density_level_3,dijkstra_reference,42,6,13,0.8666666666666667,13,13,8192,,,,,,1,,1,0.0,7.585800005472265e-06,1000
+E_graph_density,density_level_4,dijkstra_reference,42,6,15,1.0,15,15,32768,,,,,,1,,1,0.0,8.991100003186148e-06,1000

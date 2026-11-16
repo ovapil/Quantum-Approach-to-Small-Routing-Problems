@@ -1,0 +1,4 @@
+experiment,topology,method,seed,nodes,edges,density,variables,qubits,state_space_size,total_shots,feasible_shots,optimal_shots,feasibility_rate,optimal_solution_probability,best_feasible_cost,mean_feasible_cost,optimal_cost,optimality_gap,runtime_seconds,runtime_repeats
+A_topology_size,topology_6,dijkstra_reference,,6,7,0.23333333333333334,7,7,128,,,,,,7,,7,0.0,9.751099998538848e-06,1000
+A_topology_size,topology_8,dijkstra_reference,,8,11,0.19642857142857142,11,11,2048,,,,,,10,,10,0.0,1.5098700001544785e-05,1000
+A_topology_size,topology_10,dijkstra_reference,,10,15,0.16666666666666666,15,15,32768,,,,,,12,,12,0.0,2.1252099999401252e-05,1000

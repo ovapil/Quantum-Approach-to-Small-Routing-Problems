@@ -1,0 +1,5 @@
+topology,nodes,edges,variables,qubits,state_space_size,statevector_memory_mib,dag_density
+density_level_1,6,7,7,7,128,0.001953125,0.4666666666666667
+density_level_2,6,10,10,10,1024,0.015625,0.6666666666666666
+density_level_3,6,13,13,13,8192,0.125,0.8666666666666667
+density_level_4,6,15,15,15,32768,0.5,1.0

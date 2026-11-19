@@ -2,10 +2,123 @@ import json
 import sys
 import time
 import csv
+import networkx as nx
 from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+def load_topology_graph(topology_name):
+    """
+    Load topology từ data/topology_X.json
+    và chuyển thành NetworkX graph.
+    """
+
+    file_path = (
+        PROJECT_ROOT
+        / "data"
+        / f"{topology_name}.json"
+    )
+
+    with file_path.open(
+        "r",
+        encoding="utf-8"
+    ) as file:
+        data = json.load(file)
+
+    directed = data.get(
+        "directed",
+        True
+    )
+
+    graph = (
+        nx.DiGraph()
+        if directed
+        else nx.Graph()
+    )
+
+    nodes = data["nodes"]
+
+    for node in nodes:
+        if isinstance(node, dict):
+            node_id = (
+                node.get("id")
+                or node.get("name")
+            )
+            graph.add_node(node_id)
+        else:
+            graph.add_node(node)
+
+    for edge in data["edges"]:
+
+        if isinstance(edge, dict):
+
+            source = (
+                edge.get("source")
+                or edge.get("from")
+                or edge.get("u")
+            )
+
+            target = (
+                edge.get("target")
+                or edge.get("to")
+                or edge.get("v")
+            )
+
+            weight = edge["weight"]
+
+        else:
+
+            source = edge[0]
+            target = edge[1]
+            weight = edge[2]
+
+        graph.add_edge(
+            source,
+            target,
+            weight=weight
+        )
+
+    source_node = (
+        data.get("source")
+        or data.get("start")
+    )
+
+    target_node = (
+        data.get("target")
+        or data.get("destination")
+        or data.get("end")
+    )
+
+    if source_node is None:
+        raise ValueError(
+            f"No source found in {file_path}"
+        )
+
+    if target_node is None:
+        raise ValueError(
+            f"No target found in {file_path}"
+        )
+
+    return (
+        graph,
+        source_node,
+        target_node
+    )
+
+def conservative_penalty(graph):
+    """
+    Chọn penalty bảo thủ cho experiment scaling.
+    """
+
+    total_weight = sum(
+        float(data["weight"])
+        for _, _, data
+        in graph.edges(data=True)
+    )
+
+    return total_weight + 1.0
+
 SRC_DIR = PROJECT_ROOT / "src"
 
 sys.path.insert(
@@ -46,6 +159,7 @@ def graph_to_metric_edges(graph):
 
 
 def run_single_experiment(
+    topology_name="topology_4",
     p=1,
     penalty=3.0,
     shots=2048,
@@ -53,7 +167,7 @@ def run_single_experiment(
     maxiter=150,
 ):
     """
-    Chạy một QAOA experiment trên topology 4.
+    Chạy một QAOA experiment trên topology được chọn.
 
     Pipeline:
 
@@ -64,16 +178,36 @@ def run_single_experiment(
         -> QAOA
         -> counts
         -> metrics
+
+    Parameters
+    ----------
+    topology_name : str
+        Tên topology, ví dụ:
+        topology_4, topology_6,
+        topology_8, topology_10.
+
+    penalty : float or None
+        Nếu penalty=None, sử dụng
+        conservative_penalty(graph).
     """
 
     # ========================================================
     # 1. TOPOLOGY
     # ========================================================
 
-    graph = create_test_topology()
+    graph, source, target = (
+        load_topology_graph(
+            topology_name
+        )
+    )
 
-    source = "A"
-    target = "D"
+    # Nếu không truyền penalty,
+    # tự chọn penalty bảo thủ
+    # theo topology hiện tại.
+    if penalty is None:
+        penalty = conservative_penalty(
+            graph
+        )
 
     mapping = create_edge_mapping(
         graph
@@ -177,7 +311,27 @@ def run_single_experiment(
     )
 
     # ========================================================
-    # 8. STANDARDIZED RESULT ROW
+    # 8. SCALABILITY INFORMATION
+    # ========================================================
+
+    num_qubits = (
+        cost_operator.num_qubits
+    )
+
+    state_space_size = (
+        2 ** num_qubits
+    )
+
+    # Một complex128 amplitude
+    # được ước lượng khoảng 16 bytes.
+    statevector_memory_mib = (
+        state_space_size
+        * 16
+        / (1024 ** 2)
+    )
+
+    # ========================================================
+    # 9. STANDARDIZED RESULT ROW
     # ========================================================
 
     row = {
@@ -185,7 +339,7 @@ def run_single_experiment(
             "single_run",
 
         "topology":
-            "topology_4",
+            topology_name,
 
         "nodes":
             graph.number_of_nodes(),
@@ -197,7 +351,13 @@ def run_single_experiment(
             len(mapping),
 
         "qubits":
-            cost_operator.num_qubits,
+            num_qubits,
+
+        "state_space_size":
+            state_space_size,
+
+        "statevector_memory_mib":
+            statevector_memory_mib,
 
         "penalty_A":
             penalty,
@@ -266,6 +426,12 @@ def run_single_experiment(
             qaoa_result[
                 "success"
             ],
+
+        "optimization_message":
+            qaoa_result.get(
+                "message",
+                ""
+            ),
 
         "counts":
             json.dumps(

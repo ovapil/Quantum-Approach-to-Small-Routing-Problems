@@ -1,0 +1,16 @@
+
+{
+  "name": "topology_4",
+  "directed": true,
+  "nodes": ["A", "B", "C", "D"],
+  "source": "A",
+  "destination": "D",
+  "edges": [
+    {"source": "A", "target": "B", "weight": 2},
+    {"source": "A", "target": "C", "weight": 5},
+    {"source": "B", "target": "D", "weight": 3},
+    {"source": "C", "target": "D", "weight": 4}
+  ],
+  "expected_shortest_path": ["A", "B", "D"],
+  "expected_shortest_cost": 5
+}

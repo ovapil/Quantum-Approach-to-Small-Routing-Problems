@@ -1,0 +1,23 @@
+
+{
+  "name": "topology_8",
+  "directed": true,
+  "nodes": ["A", "B", "C", "D", "E", "F", "G", "H"],
+  "source": "A",
+  "destination": "H",
+  "edges": [
+    {"source": "A", "target": "B", "weight": 3},
+    {"source": "A", "target": "C", "weight": 2},
+    {"source": "B", "target": "D", "weight": 4},
+    {"source": "B", "target": "E", "weight": 6},
+    {"source": "C", "target": "D", "weight": 2},
+    {"source": "C", "target": "E", "weight": 5},
+    {"source": "D", "target": "F", "weight": 3},
+    {"source": "D", "target": "G", "weight": 6},
+    {"source": "E", "target": "G", "weight": 2},
+    {"source": "F", "target": "H", "weight": 3},
+    {"source": "G", "target": "H", "weight": 2}
+  ],
+  "expected_shortest_path": ["A", "C", "D", "F", "H"],
+  "expected_shortest_cost": 10
+}

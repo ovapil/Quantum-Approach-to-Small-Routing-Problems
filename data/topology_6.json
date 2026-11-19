@@ -1,0 +1,19 @@
+
+{
+  "name": "topology_6",
+  "directed": true,
+  "nodes": ["A", "B", "C", "D", "E", "F"],
+  "source": "A",
+  "destination": "F",
+  "edges": [
+    {"source": "A", "target": "B", "weight": 4},
+    {"source": "A", "target": "C", "weight": 2},
+    {"source": "B", "target": "D", "weight": 5},
+    {"source": "C", "target": "D", "weight": 3},
+    {"source": "C", "target": "E", "weight": 6},
+    {"source": "D", "target": "F", "weight": 2},
+    {"source": "E", "target": "F", "weight": 1}
+  ],
+  "expected_shortest_path": ["A", "C", "D", "F"],
+  "expected_shortest_cost": 7
+}

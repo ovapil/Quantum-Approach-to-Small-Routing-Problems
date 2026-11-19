@@ -1,0 +1,27 @@
+
+{
+  "name": "topology_10",
+  "directed": true,
+  "nodes": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+  "source": "A",
+  "destination": "J",
+  "edges": [
+    {"source": "A", "target": "B", "weight": 4},
+    {"source": "A", "target": "C", "weight": 2},
+    {"source": "B", "target": "D", "weight": 3},
+    {"source": "B", "target": "E", "weight": 6},
+    {"source": "C", "target": "D", "weight": 2},
+    {"source": "C", "target": "F", "weight": 5},
+    {"source": "D", "target": "E", "weight": 2},
+    {"source": "D", "target": "G", "weight": 4},
+    {"source": "E", "target": "H", "weight": 3},
+    {"source": "F", "target": "G", "weight": 2},
+    {"source": "F", "target": "I", "weight": 5},
+    {"source": "G", "target": "H", "weight": 2},
+    {"source": "G", "target": "I", "weight": 4},
+    {"source": "H", "target": "J", "weight": 3},
+    {"source": "I", "target": "J", "weight": 2}
+  ],
+  "expected_shortest_path": ["A", "C", "D", "E", "H", "J"],
+  "expected_shortest_cost": 12
+}

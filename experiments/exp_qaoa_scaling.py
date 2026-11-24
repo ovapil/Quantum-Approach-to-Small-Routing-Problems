@@ -1,7 +1,7 @@
 import sys
 
 from pathlib import Path
-
+from itertools import product
 
 # ============================================================
 # PROJECT PATHS
@@ -59,9 +59,10 @@ QAOA_DEPTH = 1
 
 SHOTS = 2048
 
-SEED = 42
-
-MAXITER = 150
+SEEDS = list(range(10))
+MAXITER = None
+PENALTY_K = 0.8                        # 1.5 = cấu hình gốc
+OUTPUT_NAME = "qaoa_scaling_k08.csv"
 
 
 # ============================================================
@@ -91,15 +92,16 @@ def main():
     )
 
     print(
-        f"Fixed seed: {SEED}"
+        f"Seeds: {SEEDS}"
     )
 
     print(
-        f"Fixed maxiter: {MAXITER}"
+        "Maxiter: 300 * p (x restarts)"
     )
 
     print(
-        "Penalty strategy: conservative"
+        f"Penalty strategy: A = {PENALTY_K} * c_UB / 2 "
+        "(topology_4 giữ k = 1.5)"
     )
 
     print(
@@ -112,7 +114,7 @@ def main():
     # RUN EACH TOPOLOGY
     # ========================================================
 
-    for topology_name in TOPOLOGIES:
+    for topology_name, seed in product(TOPOLOGIES, SEEDS):
 
         print()
 
@@ -139,8 +141,11 @@ def main():
                     topology_name=topology_name,
                     p=QAOA_DEPTH,
                     penalty=None,
+                    penalty_k=(
+                        1.5 if topology_name == "topology_4" else PENALTY_K
+                    ),
                     shots=SHOTS,
-                    seed=SEED,
+                    seed=seed,
                     maxiter=MAXITER,
                 )
             )
@@ -449,7 +454,7 @@ def main():
         PROJECT_ROOT
         / "experiments"
         / "results"
-        / "qaoa_scaling.csv"
+        / OUTPUT_NAME
     )
 
     save_experiment_csv(
@@ -471,7 +476,9 @@ def main():
             f" | feasibility={result['feasibility_rate']:.4f}"
             f" | optimal_prob="
             f"{result['optimal_solution_probability']:.4f}"
-            f" | match={result['match_optimal']}"
+            f" | seed={result['seed']}"
+            f" | gain={result['optimal_prob_gain']:.2f}"
+            f" | top1={result['match_optimal']}"
             f" | optimizer_success="
             f"{result['optimization_success']}"
         )
@@ -485,7 +492,7 @@ def main():
 
     print(
         f"Successful instances: "
-        f"{len(results)}/{len(TOPOLOGIES)}"
+         f"{len(results)}/{len(TOPOLOGIES) * len(SEEDS)}"
     )
 
     print(

@@ -17,13 +17,8 @@ from experiment_runner import (
 )
 
 
-PENALTIES = [
-    2.0,
-    2.5,
-    3.0,
-    5.0,
-    10.0,
-]
+TOPOLOGIES = ["topology_6", "topology_8"]
+PENALTY_KS = [0.8, 1.0, 1.2, 1.5, 2.0, 4.0]
 
 SEEDS = [
     0,
@@ -37,91 +32,46 @@ SEEDS = [
 def main():
 
     print("=" * 70)
-    print("WEEK 5 - EXPERIMENT C: PENALTY COEFFICIENT")
+    print("EXPERIMENT C: PENALTY COEFFICIENT (A = k * c_UB / 2)")
     print("=" * 70)
 
     results = []
 
-    for penalty in PENALTIES:
+    for topology in TOPOLOGIES:
+        for k in PENALTY_KS:
 
-        print("\n" + "=" * 70)
-        print(f"PENALTY A = {penalty}")
-        print("=" * 70)
+            print(f"\n{'=' * 70}\n{topology} | k = {k}\n{'=' * 70}")
 
-        for seed in SEEDS:
+            for seed in SEEDS:
 
-            print(
-                f"\nRunning A={penalty}, "
-                f"seed={seed}"
-            )
+                result = run_single_experiment(
+                    topology_name=topology,
+                    p=1,
+                    penalty=None,
+                    penalty_k=k,
+                    shots=2048,
+                    seed=seed,
+                )
 
-            result = run_single_experiment(
-                p=1,
-                penalty=penalty,
-                shots=2048,
-                seed=seed,
-                maxiter=150,
-            )
+                result["experiment"] = "penalty"
+                results.append(result)
 
-            result["experiment"] = (
-                "penalty"
-            )
-
-            results.append(
-                result
-            )
-
-            print(
-                "Feasibility rate:",
-                f"{result['feasibility_rate']:.4f}"
-            )
-
-            print(
-                "Optimal probability:",
-                f"{result['optimal_solution_probability']:.4f}"
-            )
-
-            print(
-                "Best feasible cost:",
-                result["best_feasible_cost"]
-            )
-
-            print(
-                "Optimality gap:",
-                result["optimality_gap"]
-            )
-
-            print(
-                "Runtime:",
-                f"{result['runtime_seconds']:.6f}s"
-            )
+                print(
+                    f"  seed={seed}"
+                    f" | A={result['penalty_A']:.2f}"
+                    f" | feas={result['feasibility_rate']:.4f}"
+                    f" | P_opt={result['optimal_solution_probability']:.4f}"
+                    f" | gain={result['optimal_prob_gain']:.2f}"
+                    f" | top1={result['match_optimal']}"
+                )
 
     output_path = (
-        PROJECT_ROOT
-        / "experiments"
-        / "results"
-        / "qaoa_penalty.csv"
+        PROJECT_ROOT / "experiments" / "results" / "qaoa_penalty.csv"
     )
 
-    save_experiment_csv(
-        results,
-        output_path
-    )
-    
-    print("\n" + "=" * 70)
+    save_experiment_csv(results, output_path)
 
-    print(
-        f"[PASS] CSV created: {output_path}"
-    )
-
-    print(
-        f"Total runs: {len(results)}"
-    )
-
-    print(
-        "ALL PENALTY EXPERIMENTS COMPLETED!"
-    )
-
-
+    print(f"\n[PASS] CSV created: {output_path}")
+    print(f"Total runs: {len(results)}")
 if __name__ == "__main__":
     main()

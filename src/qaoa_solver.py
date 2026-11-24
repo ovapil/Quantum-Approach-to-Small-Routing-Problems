@@ -218,14 +218,14 @@ def run_qaoa(
     reps=1,
     shots=2048,
     seed=42,
-    maxiter=150
+    maxiter=None,
+    restarts=3,
 ):
     """
     Chạy QAOA bằng:
-
         - qaoa_ansatz
         - StatevectorEstimator
-        - COBYLA
+        - COBYLA (multi-start)
         - StatevectorSampler
     """
 
@@ -236,185 +236,92 @@ def run_qaoa(
     circuit = qaoa_ansatz(
         cost_operator,
         reps=reps,
-        flatten=True
+        flatten=True,
     )
 
-    parameter_order = list(
-        circuit.parameters
-    )
-
-    print(
-        "QAOA parameters:",
-        [
-            str(parameter)
-            for parameter in parameter_order
-        ]
-    )
+    parameter_order = list(circuit.parameters)
 
     # --------------------------------------------------------
-    # Initial parameters
+    # Optimization (multi-start COBYLA)
     # --------------------------------------------------------
 
-    rng = np.random.default_rng(
-        seed
-    )
+    if maxiter is None:
+       maxiter = 300 * reps
 
-    initial_parameters = rng.uniform(
-        low=0.0,
-        high=np.pi,
-        size=len(parameter_order)
-    )
-
-    # --------------------------------------------------------
-    # Estimator
-    # --------------------------------------------------------
-
-    estimator = StatevectorEstimator(
-        seed=seed
-    )
+    rng = np.random.default_rng(seed)
+    estimator = StatevectorEstimator(seed=seed)
 
     history = []
+    best = None
 
-    cost_function = (
-        make_cost_function(
+    for _ in range(restarts):
+        x0 = rng.uniform(0.0, np.pi, size=len(parameter_order))
+
+        cost_function = make_cost_function(
             circuit,
             parameter_order,
             cost_operator,
             estimator,
             history,
-            offset
+            offset,
         )
-    )
 
-    # --------------------------------------------------------
-    # Classical optimization
-    # --------------------------------------------------------
-
-    optimization_result = minimize(
-        cost_function,
-        initial_parameters,
-        method="COBYLA",
-        options={
-            "maxiter": maxiter,
-            "rhobeg": 0.5,
-        }
-    )
-
-    optimal_parameters = (
-        optimization_result.x
-    )
-
-    # --------------------------------------------------------
-    # Bind optimal parameters
-    # --------------------------------------------------------
-
-    optimal_map = dict(
-        zip(
-            parameter_order,
-            optimal_parameters
+        res = minimize(
+            cost_function,
+            x0,
+            method="COBYLA",
+            options={"maxiter": maxiter, "rhobeg": 0.5},
         )
-    )
 
-    optimal_circuit = (
-        circuit.assign_parameters(
-            optimal_map
-        )
-    )
+        if best is None or res.fun < best[0].fun:
+            best = (res, x0)
+
+    optimization_result, initial_parameters = best
+    optimal_parameters = optimization_result.x
 
     # --------------------------------------------------------
-    # Measurement circuit
+    # Sample with optimal parameters
     # --------------------------------------------------------
 
-    measurement_circuit = (
-        optimal_circuit.copy()
+    optimal_circuit = circuit.assign_parameters(
+        dict(zip(parameter_order, optimal_parameters))
     )
 
+    measurement_circuit = optimal_circuit.copy()
     measurement_circuit.measure_all()
 
-    # --------------------------------------------------------
-    # Sampler
-    # --------------------------------------------------------
-
-    sampler = StatevectorSampler(
-        seed=seed
-    )
-
-    sample_job = sampler.run(
+    sampler = StatevectorSampler(seed=seed)
+    sample_result = sampler.run(
         [measurement_circuit],
-        shots=shots
-    )
+        shots=shots,
+    ).result()[0]
 
-    sample_result = (
-        sample_job.result()[0]
-    )
-
-    counts = (
-        sample_result
-        .data
-        .meas
-        .get_counts()
-    )
+    counts = sample_result.data.meas.get_counts()
 
     probabilities = {
         bitstring: count / shots
-        for bitstring, count
-        in counts.items()
+        for bitstring, count in counts.items()
     }
-
-    # --------------------------------------------------------
-    # Report parameters
-    # --------------------------------------------------------
 
     final_parameter_map = {
         str(parameter): float(value)
-        for parameter, value
-        in zip(
-            parameter_order,
-            optimal_parameters
-        )
+        for parameter, value in zip(parameter_order, optimal_parameters)
     }
 
     return {
-        "success":
-            optimization_result.success,
-
-        "message":
-            optimization_result.message,
-
-        "reps":
-            reps,
-
-        "shots":
-            shots,
-
-        "parameters":
-            final_parameter_map,
-
-        "initial_parameters":
-            initial_parameters.tolist(),
-
-        "expectation_value":
-            float(
-                optimization_result.fun
-                + offset
-            ),
-
-        "history":
-            history,
-
-        "counts":
-            counts,
-
-        "probabilities":
-            probabilities,
-
-        "circuit":
-            circuit,
+        "success": optimization_result.success,
+        "message": optimization_result.message,
+        "reps": reps,
+        "shots": shots,
+        "restarts": restarts,
+        "parameters": final_parameter_map,
+        "initial_parameters": initial_parameters.tolist(),
+        "expectation_value": float(optimization_result.fun + offset),
+        "history": history,
+        "counts": counts,
+        "probabilities": probabilities,
+        "circuit": circuit,
     }
-
-
-# ============================================================
-# Standalone topology-4 test
 # ============================================================
 
 if __name__ == "__main__":

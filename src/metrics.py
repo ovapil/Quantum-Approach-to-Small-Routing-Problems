@@ -195,6 +195,25 @@ def scaling_info(nodes, edges):
         "state_space_size": 2 ** m,
     }
 
+def enumerate_path_costs(edges, source, target):
+    """Liệt kê chi phí mọi simple path s->t (dùng cho baseline random)."""
+    adj = defaultdict(list)
+    for u, v, w in edges:
+        adj[u].append((v, w))
+
+    costs = []
+
+    def dfs(node, visited, cost):
+        if node == target:
+            costs.append(cost)
+            return
+        for nxt, w in adj[node]:
+            if nxt not in visited:
+                dfs(nxt, visited | {nxt}, cost + w)
+
+    dfs(source, {source}, 0)
+    return costs
+
 
 def calculate_metrics(
     counts,
@@ -219,6 +238,8 @@ def calculate_metrics(
     optimal_shots = 0
     weighted_cost = 0.0
     best_cost = None
+    top1_shots = -1
+    top1_cost = None
 
     for bitstring, shots in counts.items():
         if type(shots) is not int or shots < 0:
@@ -241,12 +262,11 @@ def calculate_metrics(
                 else min(best_cost, cost)
             )
 
-            if isclose(
-                cost, optimal_cost,
-                rel_tol=1e-9,
-                abs_tol=1e-9,
-            ):
+            if isclose(cost, optimal_cost, rel_tol=1e-9, abs_tol=1e-9):
                 optimal_shots += shots
+
+            if shots > top1_shots:
+                top1_shots, top1_cost = shots, cost
 
     if total_shots == 0:
         raise ValueError("Total shots must be positive")
@@ -267,24 +287,44 @@ def calculate_metrics(
 
     result = scaling_info(vertices, edges)
 
+    # --- baseline random ---
+    path_costs = enumerate_path_costs(edges, source, target)
+    n_optimal_paths = sum(
+        isclose(c, optimal_cost, abs_tol=1e-9) for c in path_costs
+    )
+    space = 2 ** len(edges)
+    random_feasible_prob = len(path_costs) / space
+    random_optimal_prob = n_optimal_paths / space
+    optimal_prob = optimal_shots / total_shots
+
     result.update({
         "total_shots": total_shots,
         "feasible_shots": feasible_shots,
         "optimal_shots": optimal_shots,
-        "feasibility_rate":
-            feasible_shots / total_shots,
-        "optimal_solution_probability":
-            optimal_shots / total_shots,
+        "feasibility_rate": feasible_shots / total_shots,
+        "optimal_solution_probability": optimal_prob,
         "best_feasible_cost": best_cost,
         "mean_feasible_cost": mean_cost,
         "optimal_cost": optimal_cost,
         "optimality_gap": gap,
         "runtime_seconds": runtime_seconds,
+        "top1_cost": top1_cost,
+        "top1_match": (
+            top1_cost is not None
+            and isclose(top1_cost, optimal_cost, abs_tol=1e-9)
+        ),
+        "random_feasible_prob": random_feasible_prob,
+        "random_optimal_prob": random_optimal_prob,
+        "optimal_prob_gain": (
+            optimal_prob / random_optimal_prob
+            if random_optimal_prob else None
+        ),
+        "approximation_ratio": (
+            optimal_cost / mean_cost if mean_cost else None
+        ),
     })
 
     return result
-
-
 def save_results_csv(rows, output_path):
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)

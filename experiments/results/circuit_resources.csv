@@ -1,0 +1,13 @@
+topology,qubits,zz_terms,p,depth,cx_count,total_gates
+topology_4,4,4,1,18,8,48
+topology_4,4,4,2,30,16,84
+topology_4,4,4,3,42,24,120
+topology_6,7,10,1,33,20,93
+topology_6,7,10,2,57,40,165
+topology_6,7,10,3,81,60,237
+topology_8,11,21,1,48,42,162
+topology_8,11,21,2,75,84,291
+topology_8,11,21,3,102,126,420
+topology_10,15,32,1,63,64,231
+topology_10,15,32,2,96,128,417
+topology_10,15,32,3,129,192,603

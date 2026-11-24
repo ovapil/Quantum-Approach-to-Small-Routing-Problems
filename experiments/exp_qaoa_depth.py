@@ -30,106 +30,58 @@ SEEDS = [
     3,
     4,
 ]
+TOPOLOGIES = ["topology_6", "topology_8"]
 
 
 def main():
 
     print("=" * 70)
-    print("WEEK 5 - EXPERIMENT B: QAOA DEPTH")
+    print("EXPERIMENT B: QAOA DEPTH")
     print("=" * 70)
 
     results = []
 
-    for p in DEPTHS:
+    for topology in TOPOLOGIES:
+        for p in DEPTHS:
 
-        print(
-            f"\n{'=' * 70}"
-        )
+            print(f"\n{'=' * 70}")
+            print(f"{topology} | DEPTH p = {p}")
+            print(f"{'=' * 70}")
 
-        print(
-            f"DEPTH p = {p}"
-        )
+            for seed in SEEDS:
 
-        print(
-            f"{'=' * 70}"
-        )
+                print(f"\nRunning {topology}, p={p}, seed={seed}")
 
-        for seed in SEEDS:
+                result = run_single_experiment(
+                    topology_name=topology,
+                    p=p,
+                    shots=2048,
+                    seed=seed,
+                )
 
-            print(
-                f"\nRunning p={p}, "
-                f"seed={seed}"
-            )
+                result["experiment"] = "qaoa_depth"
+                results.append(result)
 
-            result = run_single_experiment(
-                p=p,
-                penalty=3.0,
-                shots=2048,
-                seed=seed,
-                maxiter=150,
-            )
-
-            result["experiment"] = (
-                "qaoa_depth"
-            )
-
-            results.append(
-                result
-            )
-
-            print(
-                "Feasibility rate:",
-                f"{result['feasibility_rate']:.4f}"
-            )
-
-            print(
-                "Optimal probability:",
-                f"{result['optimal_solution_probability']:.4f}"
-            )
-
-            print(
-                "Best feasible cost:",
-                result["best_feasible_cost"]
-            )
-
-            print(
-                "Optimality gap:",
-                result["optimality_gap"]
-            )
-
-            print(
-                "Runtime:",
-                f"{result['runtime_seconds']:.6f}s"
-            )
+                print(
+                    f"  A={result['penalty_A']:.2f}"
+                    f" | feas={result['feasibility_rate']:.4f}"
+                    f" | P_opt={result['optimal_solution_probability']:.4f}"
+                    f" | gain={result['optimal_prob_gain']:.2f}"
+                    f" | top1={result['match_optimal']}"
+                    f" | evals={result['optimizer_evaluations']}"
+                    f" | success={result['optimization_success']}"
+                    f" | {result['runtime_seconds']:.2f}s"
+                )
 
     output_path = (
-        PROJECT_ROOT
-        / "experiments"
-        / "results"
-        / "qaoa_depth.csv"
+        PROJECT_ROOT / "experiments" / "results" / "qaoa_depth.csv"
     )
 
-    save_experiment_csv(
-        results,
-        output_path
-    )
+    save_experiment_csv(results, output_path)
 
-    print(
-        "\n" + "=" * 70
-    )
-
-    print(
-        f"[PASS] CSV created: {output_path}"
-    )
-
-    print(
-        f"Total runs: {len(results)}"
-    )
-
-    print(
-        "ALL QAOA DEPTH EXPERIMENTS COMPLETED!"
-    )
-
+    print("\n" + "=" * 70)
+    print(f"[PASS] CSV created: {output_path}")
+    print(f"Total runs: {len(results)}")
 
 if __name__ == "__main__":
     main()

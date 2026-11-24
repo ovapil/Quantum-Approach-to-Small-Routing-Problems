@@ -87,9 +87,7 @@ def aggregate_rows(
 
     for row in rows:
 
-        group_value = row[
-            group_column
-        ]
+        group_value = (row["topology"], row[group_column])
 
         groups.setdefault(
             group_value,
@@ -181,8 +179,14 @@ def aggregate_rows(
             "parameter":
                 group_column,
 
-            "value":
-                group_value,
+            "topology": group_value[0],
+            "value": group_value[1],
+            "mean_optimal_prob_gain": safe_mean(
+                [to_float(r["optimal_prob_gain"]) for r in group_rows]
+            ),
+            "mean_random_optimal_prob": safe_mean(
+                [to_float(r["random_optimal_prob"]) for r in group_rows]
+            ),
 
             "runs":
                 len(group_rows),

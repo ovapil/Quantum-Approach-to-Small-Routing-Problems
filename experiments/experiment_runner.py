@@ -106,18 +106,21 @@ def load_topology_graph(topology_name):
         target_node
     )
 
-def conservative_penalty(graph):
-    """
-    Chọn penalty bảo thủ cho experiment scaling.
-    """
-
-    total_weight = sum(
-        float(data["weight"])
-        for _, _, data
-        in graph.edges(data=True)
+def path_upper_bound(graph, source, target):
+    """Chi phí 1 path bất kỳ (BFS theo số hop, KHÔNG dùng trọng số) -> c_UB >= c*."""
+    hop_path = nx.shortest_path(graph, source, target)
+    return sum(
+        graph[u][v]["weight"] for u, v in zip(hop_path, hop_path[1:])
     )
 
-    return total_weight + 1.0
+
+def bounded_penalty(graph, source, target, k=1.5):
+    """
+    Nghiệm không khả thi lệch luồng ở >= 2 node => penalty >= 2A.
+    Ground state khả thi khi 2A > c*, tức A > c*/2.
+    Dùng A = k * c_UB / 2 (k > 1 để có biên an toàn).
+    """
+    return k * path_upper_bound(graph, source, target) / 2
 
 SRC_DIR = PROJECT_ROOT / "src"
 
@@ -159,12 +162,14 @@ def graph_to_metric_edges(graph):
 
 
 def run_single_experiment(
-    topology_name="topology_4",
+    topology_name="topology_6",
     p=1,
-    penalty=3.0,
+    penalty=None,
+    penalty_k=1.5,
     shots=2048,
     seed=42,
-    maxiter=150,
+    maxiter=None,
+    restarts=3,
 ):
     """
     Chạy một QAOA experiment trên topology được chọn.
@@ -205,19 +210,18 @@ def run_single_experiment(
     # tự chọn penalty bảo thủ
     # theo topology hiện tại.
     if penalty is None:
-        penalty = conservative_penalty(
-            graph
-        )
+        penalty = bounded_penalty(graph, source, target, k=penalty_k)
+    else:
+        penalty_k = None
 
     mapping = create_edge_mapping(
         graph
     )
 
-    metric_edges = (
-        graph_to_metric_edges(
-            graph
-        )
-    )
+    metric_edges = [
+        (*mapping[i]["edge"], mapping[i]["weight"])
+        for i in range(len(mapping))
+    ]
 
     # ========================================================
     # 2. DIJKSTRA REFERENCE
@@ -302,13 +306,11 @@ def run_single_experiment(
         "best_feasible_cost"
     ]
 
-    match_optimal = (
+    found_in_samples = (
         best_cost is not None
-        and abs(
-            best_cost
-            - dijkstra_cost
-        ) < 1e-9
+        and abs(best_cost - dijkstra_cost) < 1e-9
     )
+    match_optimal = metric_result["top1_match"]
 
     # ========================================================
     # 8. SCALABILITY INFORMATION
@@ -406,7 +408,14 @@ def run_single_experiment(
 
         "match_optimal":
             match_optimal,
-
+        "optimal_found_in_samples": found_in_samples,
+        "top1_cost": metric_result["top1_cost"],
+        "random_feasible_prob": metric_result["random_feasible_prob"],
+        "random_optimal_prob": metric_result["random_optimal_prob"],
+        "optimal_prob_gain": metric_result["optimal_prob_gain"],
+        "approximation_ratio": metric_result["approximation_ratio"],
+        "penalty_k": penalty_k,
+        "restarts": restarts,
         "expectation_value":
             qaoa_result[
                 "expectation_value"
@@ -449,7 +458,6 @@ if __name__ == "__main__":
 
     result = run_single_experiment(
         p=1,
-        penalty=3.0,
         shots=2048,
         seed=42,
     )

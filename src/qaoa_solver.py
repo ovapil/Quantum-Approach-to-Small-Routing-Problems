@@ -1,13 +1,53 @@
+import os
+
 import numpy as np
 
 from scipy.optimize import minimize
 
+from qiskit import transpile
 from qiskit.circuit.library import qaoa_ansatz
 from qiskit.primitives import (
     StatevectorEstimator,
     StatevectorSampler,
 )
 from qiskit.quantum_info import SparsePauliOp
+
+
+# ============================================================
+# Backend mô phỏng
+#   QAOA_BACKEND=reference (mặc định): primitives tham chiếu của Qiskit
+#   QAOA_BACKEND=aer                 : qiskit-aer (C++), nhanh hơn
+#   QAOA_THREADS=<n>                 : số luồng Aer mỗi process (0 = tự động)
+# ============================================================
+
+def get_backend_name():
+    return os.environ.get("QAOA_BACKEND", "reference").strip().lower()
+
+
+def make_primitives(seed):
+    """Tạo (estimator, sampler) theo backend đang chọn."""
+    if get_backend_name() == "aer":
+        from qiskit_aer.primitives import (
+            EstimatorV2 as AerEstimator,
+            SamplerV2 as AerSampler,
+        )
+
+        backend_options = {
+            "method": "statevector",
+            "max_parallel_threads": int(os.environ.get("QAOA_THREADS", "0")),
+        }
+        estimator = AerEstimator(options={
+            "default_precision": 0.0,          # kỳ vọng chính xác, không lấy mẫu
+            "backend_options": backend_options,
+            "run_options": {"seed_simulator": seed},
+        })
+        sampler = AerSampler(
+            seed=seed,
+            options={"backend_options": backend_options},
+        )
+        return estimator, sampler
+
+    return StatevectorEstimator(seed=seed), StatevectorSampler(seed=seed)
 
 
 # ============================================================
@@ -224,9 +264,9 @@ def run_qaoa(
     """
     Chạy QAOA bằng:
         - qaoa_ansatz
-        - StatevectorEstimator
+        - Estimator (reference hoặc Aer, xem QAOA_BACKEND)
         - COBYLA (multi-start)
-        - StatevectorSampler
+        - Sampler (reference hoặc Aer)
     """
 
     # --------------------------------------------------------
@@ -239,6 +279,14 @@ def run_qaoa(
         flatten=True,
     )
 
+    # Aer không chạy trực tiếp cổng PauliEvolution -> phân rã trước
+    if get_backend_name() == "aer":
+        circuit = transpile(
+            circuit,
+            basis_gates=["cx", "rz", "rx", "ry", "h", "sx", "x"],
+            optimization_level=1,
+        )
+
     parameter_order = list(circuit.parameters)
 
     # --------------------------------------------------------
@@ -249,7 +297,7 @@ def run_qaoa(
        maxiter = 300 * reps
 
     rng = np.random.default_rng(seed)
-    estimator = StatevectorEstimator(seed=seed)
+    estimator, sampler = make_primitives(seed)
 
     history = []
     best = None
@@ -290,7 +338,6 @@ def run_qaoa(
     measurement_circuit = optimal_circuit.copy()
     measurement_circuit.measure_all()
 
-    sampler = StatevectorSampler(seed=seed)
     sample_result = sampler.run(
         [measurement_circuit],
         shots=shots,

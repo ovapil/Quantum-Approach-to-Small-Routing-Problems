@@ -485,6 +485,38 @@ if __name__ == "__main__":
         "and metrics completed"
     )
 
+def _run_config(config):
+    """Chạy 1 cấu hình; lỗi được trả về dạng dict thay vì làm dừng cả batch."""
+    try:
+        return run_single_experiment(**config)
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"{type(exc).__name__}: {exc}", **config}
+
+
+def run_many(configs, n_jobs=None):
+    """
+    Chạy nhiều run_single_experiment song song, mỗi cấu hình 1 process.
+
+    n_jobs = None -> một nửa số luồng CPU; n_jobs = 1 -> chạy tuần tự.
+    Kết quả trả về đúng thứ tự của configs. Lỗi -> dict có khóa "error".
+    """
+    import os
+    from concurrent.futures import ProcessPoolExecutor
+
+    if n_jobs is None:
+        n_jobs = max(1, (os.cpu_count() or 2) // 2)
+    n_jobs = max(1, min(n_jobs, len(configs)))
+
+    if n_jobs == 1:
+        return [_run_config(c) for c in configs]
+
+    # Mỗi process chỉ dùng 1 luồng Aer, tránh tranh chấp CPU
+    os.environ.setdefault("QAOA_THREADS", "1")
+
+    with ProcessPoolExecutor(max_workers=n_jobs) as pool:
+        return list(pool.map(_run_config, configs))
+
+
 def save_experiment_csv(
     rows,
     output_path

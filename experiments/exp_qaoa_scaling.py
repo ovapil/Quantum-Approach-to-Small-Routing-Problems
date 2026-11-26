@@ -1,508 +1,111 @@
+"""
+Thí nghiệm quy mô: QAOA p = 1 trên topology 4/6/8/10, nhiều seed.
+
+Tăng tốc (feedback giữa kỳ: "cần tăng tốc quá trình đánh giá thực nghiệm"):
+    - Chạy song song các cặp (topology, seed), N_JOBS process cùng lúc.
+    - Tùy chọn backend Aer (C++) thay cho primitives tham chiếu của Qiskit:
+          Git Bash:    QAOA_BACKEND=aer python experiments/exp_qaoa_scaling.py
+          PowerShell:  $env:QAOA_BACKEND="aer"; python experiments/exp_qaoa_scaling.py
+
+Output: experiments/results/<OUTPUT_NAME>
+"""
+
+import os
 import sys
-
-from pathlib import Path
+import time
 from itertools import product
+from pathlib import Path
 
-# ============================================================
-# PROJECT PATHS
-# ============================================================
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+sys.path.insert(0, str(PROJECT_ROOT / "experiments"))
 
-PROJECT_ROOT = (
-    Path(__file__).resolve().parents[1]
-)
-
-SRC_DIR = (
-    PROJECT_ROOT
-    / "src"
-)
-
-EXPERIMENT_DIR = (
-    PROJECT_ROOT
-    / "experiments"
-)
-
-
-sys.path.insert(
-    0,
-    str(SRC_DIR)
-)
-
-sys.path.insert(
-    0,
-    str(EXPERIMENT_DIR)
-)
+from experiment_runner import run_many, save_experiment_csv
 
 
 # ============================================================
-# IMPORT PROJECT MODULES
+# CẤU HÌNH
 # ============================================================
 
-from experiment_runner import (
-    run_single_experiment,
-    save_experiment_csv,
-)
-
-
-# ============================================================
-# EXPERIMENT CONFIGURATION
-# ============================================================
-
-TOPOLOGIES = [
-    "topology_4",
-    "topology_6",
-    "topology_8",
-    "topology_10",
-]
-
-
+TOPOLOGIES = ["topology_4", "topology_6", "topology_8", "topology_10"]
 QAOA_DEPTH = 1
-
 SHOTS = 2048
-
 SEEDS = list(range(10))
-MAXITER = None
+MAXITER = None                         # None -> 300 * p
 PENALTY_K = 0.8                        # 1.5 = cấu hình gốc
-OUTPUT_NAME = "qaoa_scaling_k08.csv"
+OUTPUT_NAME = "qaoa_scaling_k08.csv"  # "qaoa_scaling.csv" = cấu hình gốc
+N_JOBS = None                          # None = nửa số luồng CPU; 1 = tuần tự như cũ
 
 
-# ============================================================
-# MAIN EXPERIMENT
-# ============================================================
+def penalty_k_for(topology):
+    # topology_4: c_UB = c*, nên k = 0.8 nằm dưới ngưỡng A > c*/2 -> giữ 1.5
+    return 1.5 if topology == "topology_4" else PENALTY_K
+
 
 def main():
-
-    print(
-        "=" * 75
-    )
-
-    print(
-        "WEEK 6 - QAOA SCALABILITY EXPERIMENT"
-    )
-
-    print(
-        "=" * 75
-    )
-
-    print(
-        f"Fixed depth p: {QAOA_DEPTH}"
-    )
-
-    print(
-        f"Fixed shots: {SHOTS}"
-    )
-
-    print(
-        f"Seeds: {SEEDS}"
-    )
-
-    print(
-        "Maxiter: 300 * p (x restarts)"
-    )
-
-    print(
-        f"Penalty strategy: A = {PENALTY_K} * c_UB / 2 "
-        "(topology_4 giữ k = 1.5)"
-    )
-
-    print(
-        "=" * 75
-    )
-
-    results = []
-
-    # ========================================================
-    # RUN EACH TOPOLOGY
-    # ========================================================
-
-    for topology_name, seed in product(TOPOLOGIES, SEEDS):
-
-        print()
-
-        print(
-            "=" * 75
+    backend = os.environ.get("QAOA_BACKEND", "reference")
+    configs = [
+        dict(
+            topology_name=topology,
+            p=QAOA_DEPTH,
+            penalty=None,
+            penalty_k=penalty_k_for(topology),
+            shots=SHOTS,
+            seed=seed,
+            maxiter=MAXITER,
         )
+        for topology, seed in product(TOPOLOGIES, SEEDS)
+    ]
 
-        print(
-            f"RUNNING {topology_name}"
-        )
+    print("=" * 75)
+    print("QAOA SCALABILITY EXPERIMENT")
+    print("=" * 75)
+    print(f"Topologies: {TOPOLOGIES}")
+    print(f"p = {QAOA_DEPTH} | shots = {SHOTS} | seeds = {SEEDS}")
+    print(f"Penalty: A = {PENALTY_K} * c_UB / 2 (topology_4 giữ k = 1.5)")
+    print(f"Backend: {backend} | N_JOBS: {N_JOBS or 'auto'} | runs: {len(configs)}")
+    print("=" * 75)
 
-        print(
-            "=" * 75
-        )
+    start = time.perf_counter()
+    outputs = run_many(configs, n_jobs=N_JOBS)
+    wall_time = time.perf_counter() - start
 
-        try:
-
-            # ------------------------------------------------
-            # Run one QAOA experiment
-            # ------------------------------------------------
-
-            result = (
-                run_single_experiment(
-                    topology_name=topology_name,
-                    p=QAOA_DEPTH,
-                    penalty=None,
-                    penalty_k=(
-                        1.5 if topology_name == "topology_4" else PENALTY_K
-                    ),
-                    shots=SHOTS,
-                    seed=seed,
-                    maxiter=MAXITER,
-                )
-            )
-
-            # Đổi tên experiment để phân biệt
-            # với các experiment của Week 5.
-            result[
-                "experiment"
-            ] = "qaoa_scaling"
-
-            results.append(
-                result
-            )
-
-            # ------------------------------------------------
-            # Print structural information
-            # ------------------------------------------------
-
-            print()
-
-            print(
-                "[STRUCTURE]"
-            )
-
-            print(
-                "Topology:",
-                result[
-                    "topology"
-                ]
-            )
-
-            print(
-                "Nodes:",
-                result[
-                    "nodes"
-                ]
-            )
-
-            print(
-                "Edges:",
-                result[
-                    "edges"
-                ]
-            )
-
-            print(
-                "Variables:",
-                result[
-                    "variables"
-                ]
-            )
-
-            print(
-                "Qubits:",
-                result[
-                    "qubits"
-                ]
-            )
-
-            print(
-                "State-space size:",
-                result[
-                    "state_space_size"
-                ]
-            )
-
-            print(
-                "Estimated raw statevector memory:",
-                (
-                    f"{result['statevector_memory_mib']:.6f}"
-                    " MiB"
-                )
-            )
-
-            # ------------------------------------------------
-            # Print reference solution
-            # ------------------------------------------------
-
-            print()
-
-            print(
-                "[DIJKSTRA REFERENCE]"
-            )
-
-            print(
-                "Path:",
-                result[
-                    "dijkstra_path"
-                ]
-            )
-
-            print(
-                "Cost:",
-                result[
-                    "dijkstra_cost"
-                ]
-            )
-
-            # ------------------------------------------------
-            # Print QAOA configuration
-            # ------------------------------------------------
-
-            print()
-
-            print(
-                "[QAOA CONFIGURATION]"
-            )
-
-            print(
-                "Penalty A:",
-                result[
-                    "penalty_A"
-                ]
-            )
-
-            print(
-                "Depth p:",
-                result[
-                    "p"
-                ]
-            )
-
-            print(
-                "Shots:",
-                result[
-                    "shots"
-                ]
-            )
-
-            print(
-                "Seed:",
-                result[
-                    "seed"
-                ]
-            )
-
-            # ------------------------------------------------
-            # Print QAOA quality metrics
-            # ------------------------------------------------
-
-            print()
-
-            print(
-                "[QAOA RESULT]"
-            )
-
-            print(
-                "Feasibility rate:",
-                (
-                    f"{result['feasibility_rate']:.6f}"
-                )
-            )
-
-            print(
-                "Optimal solution probability:",
-                (
-                    f"{result['optimal_solution_probability']:.6f}"
-                )
-            )
-
-            print(
-                "Best feasible cost:",
-                result[
-                    "best_feasible_cost"
-                ]
-            )
-
-            print(
-                "Mean feasible cost:",
-                result[
-                    "mean_feasible_cost"
-                ]
-            )
-
-            print(
-                "Optimality gap:",
-                result[
-                    "optimality_gap"
-                ]
-            )
-
-            print(
-                "Match Dijkstra optimum:",
-                result[
-                    "match_optimal"
-                ]
-            )
-
-            # ------------------------------------------------
-            # Print optimizer information
-            # ------------------------------------------------
-
-            print()
-
-            print(
-                "[OPTIMIZER]"
-            )
-
-            print(
-                "Optimization success:",
-                result[
-                    "optimization_success"
-                ]
-            )
-
-            print(
-                "Optimization message:",
-                result.get(
-                    "optimization_message",
-                    ""
-                )
-            )
-
-            print(
-                "Optimizer evaluations:",
-                result[
-                    "optimizer_evaluations"
-                ]
-            )
-
-            print(
-                "Expectation value:",
-                result[
-                    "expectation_value"
-                ]
-            )
-
-            # ------------------------------------------------
-            # Print runtime
-            # ------------------------------------------------
-
-            print()
-
-            print(
-                "[RUNTIME]"
-            )
-
-            print(
-                "QAOA runtime:",
-                (
-                    f"{result['runtime_seconds']:.6f}"
-                    " seconds"
-                )
-            )
-
-            print()
-
-            print(
-                f"[PASS] {topology_name} completed"
-            )
-
-        except Exception as error:
-
-            print()
-
-            print(
-                f"[FAIL] {topology_name}"
-            )
-
-            print(
-                "Error type:",
-                type(
-                    error
-                ).__name__
-            )
-
-            print(
-                "Message:",
-                str(
-                    error
-                )
-            )
-
-            # Không dừng toàn bộ experiment.
-            # Nếu topology lớn gặp lỗi,
-            # vẫn giữ kết quả của topology nhỏ.
+    results, failures = [], []
+    for out in outputs:
+        if "error" in out:
+            failures.append(out)
             continue
+        out["experiment"] = "qaoa_scaling"
+        out["backend"] = backend
+        results.append(out)
 
-    # ========================================================
-    # SAVE RESULTS
-    # ========================================================
-
-    print()
-
-    print(
-        "=" * 75
-    )
-
-    print(
-        "QAOA SCALABILITY SUMMARY"
-    )
-
-    print(
-        "=" * 75
-    )
-
-    if not results:
-
+    print("\nSUMMARY")
+    print("-" * 75)
+    for r in results:
         print(
-            "[FAIL] No QAOA scaling runs completed."
+            f"{r['topology']:<12} | qubits={r['qubits']:>2} | seed={r['seed']}"
+            f" | feas={r['feasibility_rate']:.4f}"
+            f" | P_opt={r['optimal_solution_probability']:.4f}"
+            f" | gain={r['optimal_prob_gain']:.2f}"
+            f" | top1={r['match_optimal']}"
+            f" | success={r['optimization_success']}"
+            f" | {r['runtime_seconds']:.2f}s"
         )
+    for f in failures:
+        print(f"[FAIL] {f['topology_name']} seed={f['seed']}: {f['error']}")
 
-        return
+    if results:
+        output_path = PROJECT_ROOT / "experiments" / "results" / OUTPUT_NAME
+        save_experiment_csv(results, output_path)
+        print(f"\n[PASS] CSV created: {output_path}")
 
-    output_path = (
-        PROJECT_ROOT
-        / "experiments"
-        / "results"
-        / OUTPUT_NAME
-    )
-
-    save_experiment_csv(
-        results,
-        output_path
-    )
-
-    # ========================================================
-    # PRINT COMPACT SUMMARY
-    # ========================================================
-
-    for result in results:
-
-        print(
-            f"{result['topology']}"
-            f" | qubits={result['qubits']}"
-            f" | states={result['state_space_size']}"
-            f" | runtime={result['runtime_seconds']:.6f}s"
-            f" | feasibility={result['feasibility_rate']:.4f}"
-            f" | optimal_prob="
-            f"{result['optimal_solution_probability']:.4f}"
-            f" | seed={result['seed']}"
-            f" | gain={result['optimal_prob_gain']:.2f}"
-            f" | top1={result['match_optimal']}"
-            f" | optimizer_success="
-            f"{result['optimization_success']}"
-        )
-
-    print()
-
+    total_run_time = sum(r["runtime_seconds"] for r in results)
+    print(f"Successful runs: {len(results)}/{len(configs)}")
     print(
-        f"[PASS] CSV created: "
-        f"{output_path}"
+        f"Wall time: {wall_time:.1f}s | tổng runtime các run: {total_run_time:.1f}s"
+        f" | tăng tốc ~x{total_run_time / wall_time:.1f}"
     )
 
-    print(
-        f"Successful instances: "
-         f"{len(results)}/{len(TOPOLOGIES) * len(SEEDS)}"
-    )
-
-    print(
-        "=" * 75
-    )
-
-
-# ============================================================
-# ENTRY POINT
-# ============================================================
 
 if __name__ == "__main__":
     main()
